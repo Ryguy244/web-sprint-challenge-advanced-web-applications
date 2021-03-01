@@ -1,41 +1,60 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-
+import EditMenu from "./EditMenu";
+import { useHistory, useParams } from "react-router-dom";
+import axiosWithAuth from "../api/axiosWithAuth";
 const initialColor = {
   color: "",
-  code: { hex: "" }
+  code: { hex: "" },
 };
 
 const ColorList = ({ colors, updateColors }) => {
   const [editing, setEditing] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(initialColor);
+  const params = useParams();
+  const { push } = useHistory();
+  const auth = axiosWithAuth();
 
-  const editColor = color => {
+  const editColor = (color) => {
     setEditing(true);
     setColorToEdit(color);
   };
 
-  const saveEdit = e => {
+  const saveEdit = (e) => {
     e.preventDefault();
-
+    auth
+      .put(`/colors/${colors.id}`, colors)
+      .then(() => {
+        updateColors();
+      })
+      .catch();
   };
 
-  const deleteColor = color => {
+  const deleteColor = (color) => {
+    auth
+      .delete(`/api/colors/${params.id}`)
+      .then(() => {
+        updateColors(colors.filter((item) => item.id !== colors.id));
+        push("/");
+      })
+      .catch((err) => console.log(err.response));
   };
 
   return (
     <div className="colors-wrap">
       <p>colors</p>
       <ul>
-        {colors.map(color => (
+        {colors.map((color) => (
           <li key={color.color} onClick={() => editColor(color)}>
             <span>
-              <span className="delete" onClick={e => {
-                    e.stopPropagation();
-                    deleteColor(color)
-                  }
-                }>
-                  x
+              <span
+                className="delete"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteColor(color);
+                }}
+              >
+                x
               </span>{" "}
               {color.color}
             </span>
@@ -46,8 +65,14 @@ const ColorList = ({ colors, updateColors }) => {
           </li>
         ))}
       </ul>
-      { editing && <EditMenu colorToEdit={colorToEdit} saveEdit={saveEdit} setColorToEdit={setColorToEdit} setEditing={setEditing}/> }
-
+      {editing && (
+        <EditMenu
+          colorToEdit={colorToEdit}
+          saveEdit={saveEdit}
+          setColorToEdit={setColorToEdit}
+          setEditing={setEditing}
+        />
+      )}
     </div>
   );
 };
